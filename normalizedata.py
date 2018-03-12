@@ -28,7 +28,7 @@ tmp.loc[np.logical_not(tmp['项目类别'].isnull())].to_csv('./data/good2_rmemp
 
 tmp2 = pd.read_csv('./data/good2_rmempty.csv', header=0, quoting=csv.QUOTE_ALL)
 
-tmp2.loc[tmp2['项目批准号'].duplicated(keep=False)].to_csv('./data/good2_rmempty_dup.csv', index=False, encoding='utf-8')
+tmp2.loc[tmp2['项目批准号'].duplicated(keep=False)].sort_values('项目批准号').to_csv('./data/good2_rmempty_dup.csv', index=False, encoding='utf-8')
 
 tmp3 = pd.read_csv('./data/good2_rmempty_g.csv', header=0, quoting=csv.QUOTE_ALL)
 
