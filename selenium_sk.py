@@ -21,7 +21,11 @@ def get_page_data(driver):
     try:
         data_table = driver.find_element_by_class_name('jCarouselLite')
         data_data = data_table.find_element_by_xpath('//div/div/table/tbody')
-        table = ElementTree.fromstring(data_data.get_attribute('outerHTML'))
+        text = data_data.get_attribute('outerHTML')
+        # problems start
+        text = text.replace('" 一带一路"倡议在欧盟遭遇的挑战与对策研究"="', 'ydyl')
+        # problems end
+        table = ElementTree.fromstring(text)
         result = list()
         for x in table.findall('tr'):
             result.append('\t'.join([y[0].text if y[0].text else '' for y in x]))
@@ -72,4 +76,4 @@ ff.get('http://fz.people.com.cn/skygb/sk/index.php/Index/seach')
 
 save_grant_by_year(ff, 2018, 1, 'sk_2018.csv')
 
-save_grant(ff, 1,'sk_2018.csv')
+save_grant(ff, 3, 'sk_2018.csv')
