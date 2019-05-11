@@ -1,4 +1,4 @@
-import os
+import sys
 import time
 import random
 from selenium import webdriver
@@ -7,41 +7,69 @@ from xml.etree import ElementTree
 
 random.seed(1024)
 
+def search_grant_by_year(driver, year):
+    # select year
+    lxtime = driver.find_element_by_name('lxtime')
+    lxtime.send_keys(str(year))
+    # search by year
+    subdiv = driver.find_element_by_class_name('w980.clear.input00')
+    submit = subdiv.find_elements_by_tag_name('input')[0]
+    submit.click()
 
-def search_grant_info(driver, i, out_file):
-    data_table = driver.find_element_by_class_name('jCarouselLite')
-    data_head = data_table.find_element_by_xpath('//div/div/table/thead/tr')
-#    with open(out_file, 'ab') as f:
-#        the_head = ElementTree.fromstring(data_head.get_attribute('outerHTML'))
-#        f.write(
-#            (','.join(x.text.replace(' ', '') for x in the_head.getchildren()) + '/n').encode('utf-8')
-#        )
+
+def get_page_data(driver):
+    try:
+        data_table = driver.find_element_by_class_name('jCarouselLite')
+        data_data = data_table.find_element_by_xpath('//div/div/table/tbody')
+        table = ElementTree.fromstring(data_data.get_attribute('outerHTML'))
+        result = list()
+        for x in table.findall('tr'):
+            result.append('\t'.join([y[0].text if y[0].text else '' for y in x]))
+        return result
+    except NoSuchElementException:
+        raise NoSuchElementException
+
+
+def next_page(driver):
+    page = driver.find_element_by_class_name('page.clear')
+    next_page = page.find_element_by_link_text('下一页')
+    next_page.click()
+    time.sleep(random.uniform(0, 3))
+
+
+def save_grant(driver, i, out_file):
     while True:
         try:
-            data_table = driver.find_element_by_class_name('jCarouselLite')
-            data_data = data_table.find_element_by_xpath('//div/div/table/tbody')
-            table = ElementTree.fromstring(data_data.get_attribute('outerHTML'))
+            tablerow = get_page_data(driver)
             with open(out_file, 'ab') as f:
-                for x in table.findall('tr'):
-                    f.write(
-                        (
-                            ','.join(
-                                [str(i)] +
-                                [y.getchildren()[0].text if y.getchildren()[0].text else '' for y in x.getchildren()]
-                            ) + '\n'
-                        ).encode('utf-8')
-                    )
-                    i = i + 1
-            # get new page
-            page = driver.find_element_by_class_name('page.clear')
-            next_page = page.find_element_by_link_text('下一页')
-            next_page.click()
-            time.sleep(random.uniform(0, 3))
+                f.write(
+                   ''.join(
+                       [('\t'.join([str(i), y]) + '\n') for y in tablerow]
+                   ).encode('utf-8')
+                )
+                i = i + 1
+                # get new page
+                next_page(driver)
         except NoSuchElementException:
             break
     return i
 
 
-ff = webdriver.Firefox(executable_path=r'./geckodriver.exe')
-ff.get('http://fz.people.com.cn/skygb/sk/?&p=3094')
-search_grant_info(ff, 61861, 'sk.csv')
+def save_grant_by_year(driver, year, i, out_file):
+    search_grant_by_year(driver, year)
+    newi = save_grant(driver, i, out_file)
+    return newi
+    return i
+
+
+# process
+if sys.platform == 'win32':
+    ff = webdriver.Firefox(executable_path=r'./geckodriver.exe')
+elif sys.platform == 'linux':
+    ff = webdriver.Firefox(executable_path=r'./geckodriver')
+
+ff.get('http://fz.people.com.cn/skygb/sk/index.php/Index/seach')
+
+save_grant_by_year(ff, 2018, 1, 'sk_2018.csv')
+
+save_grant(ff, 1,'sk_2018.csv')
